@@ -22,7 +22,7 @@ class ScheduleSystem implements SystemInterface {
                 new ThreadPoolExecutor(
                         1,
                         queueSize,
-                        3,
+                        10,
                         TimeUnit.SECONDS,
                         new PriorityBlockingQueue<>())
                 )
