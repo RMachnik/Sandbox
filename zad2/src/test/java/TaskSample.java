@@ -1,6 +1,4 @@
-/**
- * machnikr on 11/13/2015.
- */
+
 public class TaskSample implements TaskInterface {
 
     private int firstQueue;

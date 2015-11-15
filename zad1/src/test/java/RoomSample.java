@@ -1,6 +1,4 @@
-/**
- * Created by Rafal on 11/11/2015.
- */
+
 public class RoomSample implements RoomInterface {
     private boolean isExit;
     private double distanceFromStart;

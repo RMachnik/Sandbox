@@ -1,8 +1,5 @@
 import org.junit.Test;
 
-/**
- * machnikr on 11/13/2015.
- */
 public class ScheduleSystemTest {
 
 
