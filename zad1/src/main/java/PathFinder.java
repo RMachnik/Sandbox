@@ -17,19 +17,13 @@ class PathFinder implements PathFinderInterface {
         forkJoinPool = new ForkJoinPool(--i);
     }
 
-    public void entranceToTheLabyrinth(RoomInterface mi) {
-        if (mi.isExit()) {
-            exitFound = true;
-            shortestDistanceToExit = mi.getDistanceFromStart();
-        } else {
-            //better than executors due to more effective work-stealing algorithms
-            if (forkJoinPool == null) {
-                throw new RuntimeException("ForkJoinPool is not initialised. Please invoke first setMaxThreads.");
-            }
-            if (mi.corridors() != null)
-                Arrays.stream(mi.corridors()).forEach(findExit(forkJoinPool));
-            forkJoinPool.awaitQuiescence(10, TimeUnit.MINUTES);
+    public void entranceToTheLabyrinth(RoomInterface start) {
+        //better than executors due to more effective work-stealing algorithms
+        if (forkJoinPool == null) {
+            throw new RuntimeException("ForkJoinPool is not initialised. Please invoke first setMaxThreads.");
         }
+        forkJoinPool.execute(new RoomExplorer(start));
+        forkJoinPool.awaitQuiescence(10, TimeUnit.MINUTES);
         if (exitFound) {
             if (observer == null) {
                 throw new RuntimeException("Observer should be initialised.");
@@ -63,18 +57,16 @@ class PathFinder implements PathFinderInterface {
 
         public void run() {
             if (room.isExit()) {
-                exitFound = true;
                 if (shortestDistanceToExit > room.getDistanceFromStart()) {
                     shortestDistanceToExit = room.getDistanceFromStart();
                 }
-                return;
+                exitFound = true;
             } else {
-                if (shortestDistanceToExit > room.getDistanceFromStart() && room.corridors() != null) {
-                    shortestDistanceToExit = room.getDistanceFromStart();
-                    Arrays.stream(room.corridors()).forEach(findExit(forkJoinPool));
+                if (room.corridors() != null) {
+                    if (!exitFound || shortestDistanceToExit > room.getDistanceFromStart())
+                        Arrays.stream(room.corridors()).forEach(findExit(forkJoinPool));
                 }
             }
-
         }
     }
 }
