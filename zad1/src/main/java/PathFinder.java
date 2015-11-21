@@ -23,9 +23,12 @@ class PathFinder implements PathFinderInterface {
         if (forkJoinPool == null) {
             throw new RuntimeException("ForkJoinPool is not initialised. Please invoke first setMaxThreads.");
         }
-        forkJoinPool.execute(new RoomExplorer(mi));
-        forkJoinPool.awaitQuiescence(10, TimeUnit.MINUTES);
-        forkJoinPool.shutdownNow();
+        try {
+            forkJoinPool.execute(new RoomExplorer(mi));
+            forkJoinPool.awaitQuiescence(10, TimeUnit.MINUTES);
+            forkJoinPool.shutdownNow();
+        } catch (RuntimeException r) {
+        }
         synchronized (lock) {
             if (exitFound) {
                 if (observer == null) {
@@ -67,7 +70,7 @@ class PathFinder implements PathFinderInterface {
             synchronized (lock) {
                 if (room.isExit()) {
                     try {
-                        if (shortestDistanceToExit > room.getDistanceFromStart()) {
+                        if (getShortestDistanceToExit() > room.getDistanceFromStart()) {
                             shortestDistanceToExit = room.getDistanceFromStart();
                         }
                         return;
@@ -76,10 +79,8 @@ class PathFinder implements PathFinderInterface {
                     }
                 }
             }
-            synchronized (lock) {
-                if (!exitFound() || (getShortestDistanceToExit() > room.getDistanceFromStart() && room.corridors() != null)) {
-                    Arrays.stream(room.corridors()).forEach(findExit(forkJoinPool));
-                }
+            if (!exitFound() || (getShortestDistanceToExit() > room.getDistanceFromStart() && room.corridors() != null)) {
+                Arrays.stream(room.corridors()).forEach(findExit(forkJoinPool));
             }
         }
     }
