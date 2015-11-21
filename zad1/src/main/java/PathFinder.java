@@ -5,21 +5,19 @@ import java.util.function.Consumer;
 
 
 class PathFinder implements PathFinderInterface {
-    private int maxThreads;
     private volatile boolean exitFound;
     private volatile double shortestDistanceToExit = Double.MAX_VALUE;
     private Runnable observer;
     private ForkJoinPool forkJoinPool;
-    
+
     public PathFinder() {
     }
 
     public void setMaxThreads(int i) {
-        maxThreads = i;
-        forkJoinPool = new ForkJoinPool(maxThreads);
+        forkJoinPool = new ForkJoinPool(--i);
     }
 
-    public void entranceToTheLabyrinth(RoomInterface mi) throws InterruptedException {
+    public void entranceToTheLabyrinth(RoomInterface mi) {
         if (mi.isExit()) {
             exitFound = true;
             shortestDistanceToExit = mi.getDistanceFromStart();
@@ -66,11 +64,17 @@ class PathFinder implements PathFinderInterface {
         public void run() {
             if (room.isExit()) {
                 exitFound = true;
-                if (shortestDistanceToExit > room.getDistanceFromStart())
+                if (shortestDistanceToExit > room.getDistanceFromStart()) {
                     shortestDistanceToExit = room.getDistanceFromStart();
+                }
+                return;
+            } else {
+                if (shortestDistanceToExit > room.getDistanceFromStart() && room.corridors() != null) {
+                    shortestDistanceToExit = room.getDistanceFromStart();
+                    Arrays.stream(room.corridors()).forEach(findExit(forkJoinPool));
+                }
             }
-            if (room.corridors() != null)
-                Arrays.stream(room.corridors()).forEach(findExit(forkJoinPool));
+
         }
     }
 }
