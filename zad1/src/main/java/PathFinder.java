@@ -18,13 +18,13 @@ class PathFinder implements PathFinderInterface {
         forkJoinPool = new ForkJoinPool(--i);
     }
 
-    public void entranceToTheLabyrinth(RoomInterface mi) {
+    public void entranceToTheLabyrinth(RoomInterface startingRoom) {
         //better than executors due to more effective work-stealing algorithms
         if (forkJoinPool == null) {
             throw new RuntimeException("ForkJoinPool is not initialised. Please invoke first setMaxThreads.");
         }
         try {
-            forkJoinPool.execute(new RoomExplorer(mi));
+            forkJoinPool.execute(new RoomExplorer(startingRoom));
             forkJoinPool.awaitQuiescence(10, TimeUnit.MINUTES);
             forkJoinPool.shutdownNow();
         } catch (RuntimeException r) {
