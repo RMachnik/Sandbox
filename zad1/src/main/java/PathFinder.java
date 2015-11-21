@@ -9,7 +9,7 @@ class PathFinder implements PathFinderInterface {
     private volatile double shortestDistanceToExit = Double.MAX_VALUE;
     private Runnable observer;
     private ForkJoinPool forkJoinPool;
-    private Object lock = new Object();
+    private final Object lock = new Object();
 
     public PathFinder() {
     }
@@ -30,7 +30,7 @@ class PathFinder implements PathFinderInterface {
         } catch (RuntimeException r) {
         }
         synchronized (lock) {
-            if (exitFound) {
+            if (exitFound()) {
                 if (observer == null) {
                     throw new RuntimeException("Observer should be initialised.");
                 }
