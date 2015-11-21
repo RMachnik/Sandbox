@@ -9,6 +9,7 @@ class PathFinder implements PathFinderInterface {
     private volatile double shortestDistanceToExit = Double.MAX_VALUE;
     private Runnable observer;
     private ForkJoinPool forkJoinPool;
+    private Object lock = new Object();
 
     public PathFinder() {
     }
@@ -17,18 +18,21 @@ class PathFinder implements PathFinderInterface {
         forkJoinPool = new ForkJoinPool(--i);
     }
 
-    public void entranceToTheLabyrinth(RoomInterface start) {
+    public void entranceToTheLabyrinth(RoomInterface mi) {
         //better than executors due to more effective work-stealing algorithms
         if (forkJoinPool == null) {
             throw new RuntimeException("ForkJoinPool is not initialised. Please invoke first setMaxThreads.");
         }
-        forkJoinPool.execute(new RoomExplorer(start));
+        forkJoinPool.execute(new RoomExplorer(mi));
         forkJoinPool.awaitQuiescence(10, TimeUnit.MINUTES);
-        if (exitFound) {
-            if (observer == null) {
-                throw new RuntimeException("Observer should be initialised.");
+        forkJoinPool.shutdownNow();
+        synchronized (lock) {
+            if (exitFound) {
+                if (observer == null) {
+                    throw new RuntimeException("Observer should be initialised.");
+                }
+                observer.run();
             }
-            observer.run();
         }
     }
 
@@ -41,11 +45,15 @@ class PathFinder implements PathFinderInterface {
     }
 
     public boolean exitFound() {
-        return exitFound;
+        synchronized (lock) {
+            return exitFound;
+        }
     }
 
     public double getShortestDistanceToExit() {
-        return shortestDistanceToExit;
+        synchronized (lock) {
+            return shortestDistanceToExit;
+        }
     }
 
     class RoomExplorer implements Runnable {
@@ -56,15 +64,21 @@ class PathFinder implements PathFinderInterface {
         }
 
         public void run() {
-            if (room.isExit()) {
-                if (shortestDistanceToExit > room.getDistanceFromStart()) {
-                    shortestDistanceToExit = room.getDistanceFromStart();
+            synchronized (lock) {
+                if (room.isExit()) {
+                    try {
+                        if (shortestDistanceToExit > room.getDistanceFromStart()) {
+                            shortestDistanceToExit = room.getDistanceFromStart();
+                        }
+                        return;
+                    } finally {
+                        exitFound = exitFound || room.isExit();
+                    }
                 }
-                exitFound = true;
-            } else {
-                if (room.corridors() != null) {
-                    if (!exitFound || shortestDistanceToExit > room.getDistanceFromStart())
-                        Arrays.stream(room.corridors()).forEach(findExit(forkJoinPool));
+            }
+            synchronized (lock) {
+                if (!exitFound() || (getShortestDistanceToExit() > room.getDistanceFromStart() && room.corridors() != null)) {
+                    Arrays.stream(room.corridors()).forEach(findExit(forkJoinPool));
                 }
             }
         }
