@@ -1,12 +1,7 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class ScheduleSystem implements SystemInterface {
@@ -23,12 +18,14 @@ class ScheduleSystem implements SystemInterface {
 
     @Override
     public void setThreadsLimit(int[] maximumThreadsPerQueue) {
+        final AtomicInteger qu = new AtomicInteger(0);
         Arrays.stream(maximumThreadsPerQueue).forEach((threads) -> {
             ExecutorService executorService = Executors.newFixedThreadPool(threads);
             executorList.add(executorService);
             for (int i = 0; i < threads; i++) {
-                executorService.execute(new QueueWorker(i));
+                executorService.execute(new QueueWorker(qu.get()));
             }
+            qu.getAndIncrement();
         });
     }
 
@@ -37,34 +34,33 @@ class ScheduleSystem implements SystemInterface {
     public void addTask(TaskInterface task) {
         TaskWrapper wrapper = new TaskWrapper(task);
         for (int i = task.getFirstQueue(); i < task.getLastQueue(); i++) {
-                queueList.get(i).add(wrapper);
+            try {
+                queueList.get(i).put(wrapper);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     private class TaskWrapper implements Comparable {
         private Object lock = new Object();
-        AtomicInteger completed;
-        TaskInterface task;
+        private TaskInterface task;
 
 
         public TaskWrapper(TaskInterface task) {
             this.task = task;
-            completed = new AtomicInteger(task.getFirstQueue());
         }
 
         public void work(int queue) {
             synchronized (lock) {
-                try {
-                    System.out.println(String.format("queue %d working on task: %d", completed.get(), task.getTaskID()));
-                    task = task.work(queue);
-                } finally {
-                    completed.incrementAndGet();
-                }
+                task = task.work(queue);
             }
         }
 
-        public boolean canStart() {
-            return task.getFirstQueue() == completed.get();
+        public boolean canStart(int queue) {
+            synchronized (lock) {
+                return task.getFirstQueue() == queue;
+            }
         }
 
         @Override
@@ -74,9 +70,9 @@ class ScheduleSystem implements SystemInterface {
                 return Integer.compare(task.getTaskID(), taskWrapper.task.getTaskID());
             }
             if (!task.keepOrder()) {
-                return 1;
-            } else if (!taskWrapper.task.keepOrder()) {
                 return -1;
+            } else if (!taskWrapper.task.keepOrder()) {
+                return 1;
             }
             return 0;
         }
@@ -95,16 +91,20 @@ class ScheduleSystem implements SystemInterface {
         @Override
         public void run() {
             while (true) {
-                if (!workingQueue.isEmpty() && workingQueue.peek().canStart()) {
-                    TaskWrapper poll = null;
-                    try {
-                        poll = workingQueue.poll(100, TimeUnit.MILLISECONDS);
-                        if (poll != null)
-                            poll.work(queueNumber);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                TaskWrapper peek = workingQueue.peek();
+                if (peek != null)
+                    synchronized (peek) {
+                        if (!workingQueue.isEmpty() && peek.canStart(queueNumber)) {
+                            TaskWrapper poll = null;
+                            try {
+                                poll = workingQueue.poll(100, TimeUnit.MILLISECONDS);
+                                if (poll != null) {
+                                    poll.work(queueNumber);
+                                }
+                            } catch (InterruptedException e) {
+                            }
+                        }
                     }
-                }
             }
         }
     }
