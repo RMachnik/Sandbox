@@ -66,7 +66,7 @@ class ScheduleSystem implements SystemInterface {
         @Override
         public int compareTo(Object o) {
             TaskWrapper taskWrapper = (TaskWrapper) o;
-            if (task.keepOrder() == task.keepOrder()) {
+            if (task.keepOrder() == taskWrapper.task.keepOrder()) {
                 return Integer.compare(task.getTaskID(), taskWrapper.task.getTaskID());
             }
             if (!task.keepOrder()) {
