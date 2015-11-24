@@ -37,10 +37,14 @@ public class TaskSample implements TaskInterface {
     public TaskInterface work(int queue) {
         System.out.println(String.format("Task %d doing work on queue: %d.", taskId, queue));
         try {
-            Thread.sleep(5 * 1000);
+            if (firstQueue == lastQueue) {
+                System.out.println(String.format("Task %d DONE queue %d.", getTaskID(), queue));
+            }
+            Thread.sleep(1 * 1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        return new TaskSample(firstQueue, lastQueue, taskId, keepOrder);
+        return new TaskSample(firstQueue + 1, lastQueue, taskId, keepOrder);
+
     }
 }
