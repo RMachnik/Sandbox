@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-class ScheduleSystem implements SystemInterface {
+class SystemExec implements SystemInterface {
     private List<BlockingQueue<TaskWrapper>> queueList = new ArrayList<>();
     private List<Executor> executorList = new ArrayList<>();
 

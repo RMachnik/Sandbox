@@ -1,11 +1,11 @@
 import org.junit.Test;
 
-public class ScheduleSystemTest {
+public class SystemExecTest {
 
 
     @Test
     public void shouldWork() throws Exception {
-        SystemInterface scheduleSystem = new ScheduleSystem();
+        SystemInterface scheduleSystem = new SystemExec();
         scheduleSystem.setNumberOfQueues(5);
         scheduleSystem.setThreadsLimit(new int[]{3, 3, 3, 3});
         scheduleSystem.addTask(new TaskSample(0, 4, 1, true));
