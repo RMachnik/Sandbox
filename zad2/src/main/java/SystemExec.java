@@ -101,23 +101,23 @@ class SystemExec implements SystemInterface {
         public void run() {
             while (true) {
                 TaskWrapper peek = workingQueue.peek();
+                TaskWrapper poll = null;
                 if (peek != null)
                     synchronized (peek) {
                         if (!workingQueue.isEmpty() && peek.canStart(queueNumber)) {
-                            TaskWrapper poll;
                             try {
                                 poll = workingQueue.poll(100, TimeUnit.MILLISECONDS);
-                                if (poll != null) {
-                                    boolean isFinished = poll.task.getFirstQueue() == poll.task.getLastQueue() && poll.task.keepOrder();
-                                    poll.work(queueNumber);
-                                    if (isFinished) {
-                                        finished.incrementAndGet();
-                                    }
-                                }
                             } catch (InterruptedException e) {
                             }
                         }
                     }
+                if (poll != null) {
+                    boolean isFinished = poll.task.getFirstQueue() == poll.task.getLastQueue() && poll.task.keepOrder();
+                    poll.work(queueNumber);
+                    if (isFinished) {
+                        finished.incrementAndGet();
+                    }
+                }
             }
         }
     }
