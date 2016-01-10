@@ -298,12 +298,25 @@ public class Sandbox {
         return maxDoubleSlice;
     }
 
+    public int maxProfit(int A[]) {
+        int maxPrice = Integer.MIN_VALUE;
+        int maxPriceIndex = A.length - 1;
+        for (int i = A.length - 1; i > 0; i--) {
+            if (maxPrice < A[i]) {
+                maxPrice = A[i];
+                maxPriceIndex = i;
+            }
+        }
+        int maxProfit = 0;
+        for (int i = 0; i <= maxPriceIndex; i++) {
+            maxProfit = Math.max(maxProfit, maxPrice - A[i]);
+        }
+        return maxProfit;
+    }
+
     public static void main(String[] args) {
         Sandbox solution = new Sandbox();
 
-        System.out.println(solution.maxDoubleSliceSum(new int[]{3, 2, 6, -1, 4, 5, -1, 2}));
-        System.out.println(solution.maxDoubleSliceSum(new int[]{5, 5, 5}));
-        System.out.println(solution.maxDoubleSliceSum(new int[]{5, 5, 5, 5}));
-        System.out.println(solution.maxDoubleSliceSum(new int[]{5, 5, 5, -1, 5}));
+        System.out.println(solution.maxProfit(new int[]{3, 2, 6, 1, 4, 5, 1, 2}));
     }
 }
