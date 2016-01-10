@@ -299,17 +299,11 @@ public class Sandbox {
     }
 
     public int maxProfit(int A[]) {
-        int maxPrice = Integer.MIN_VALUE;
-        int maxPriceIndex = A.length - 1;
-        for (int i = A.length - 1; i > 0; i--) {
-            if (maxPrice < A[i]) {
-                maxPrice = A[i];
-                maxPriceIndex = i;
-            }
-        }
         int maxProfit = 0;
-        for (int i = 0; i <= maxPriceIndex; i++) {
-            maxProfit = Math.max(maxProfit, maxPrice - A[i]);
+        int minDay = Integer.MAX_VALUE;
+        for (int i = 0; i < A.length; i++) {
+            minDay = Math.min(minDay, A[i]);
+            maxProfit = Math.max(maxProfit, A[i] - minDay);
         }
         return maxProfit;
     }
