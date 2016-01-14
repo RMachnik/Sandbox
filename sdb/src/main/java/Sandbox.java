@@ -308,6 +308,20 @@ public class Sandbox {
         return maxProfit;
     }
 
+    public int divisors(int N) {
+        int divisors = 0;
+        int i = 1;
+        for (i = 1; i * i < N; i++) {
+            if (N % i == 0) {
+                divisors += 2;
+            }
+        }
+        if (i * i == N) {
+            divisors++;
+        }
+        return divisors;
+    }
+
     public static void main(String[] args) {
         Sandbox solution = new Sandbox();
 
